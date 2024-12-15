@@ -34,6 +34,17 @@ def gest_client(client, adresa):
         gest_client(client, adresa)
 
 def cerinta(client, adresa):
+    client.send("\033[35m*Ghicește numărul*\n"
+                "                   Aplicație de tip server - client.\n"
+                "                   Numărul ce trebuie ghicit se află în intervalul [0, 50].\n"
+                "                   Există 2 posibilități:\n"
+                "                   1=> Singleplayer: numărul este generat de server.\n"
+                "                   2=> Multiplayer: numărul este dat de către un client (player1).\n"
+                "                   La fiecare încercare de a ghici numărul, clientul va primi unul din\n"
+                "                   mesajele : numărul este corect / numărul este mai mic / mai mare decât numărul ales.\n"
+                "                   Fiecare rulare a scriptului va reprezenta o sesiune de joc, formată din mai multe\n"
+                "                   partide de joc.\n"
+                "                   La finalul sesiunii, se va afișa scorul maxim.\033[0m \n".encode())
     gest_client(client, adresa)
 
 def single(client):

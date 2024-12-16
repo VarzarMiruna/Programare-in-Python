@@ -5,6 +5,10 @@ import threading
 nr = None
 scor = []
 
+nr2 = None
+scor2 = []
+clients = []
+lock = threading.Lock()
 
 def gest_client(client, adresa):
     print("----------------------------------------")
@@ -103,7 +107,95 @@ def single(client):
             continue
 
 def multi(client):
-    pass
+    global nr2, scor2, clients
+
+    with lock:  # Accesul la lista clients
+        if len(clients) >= 2:
+            client.send("\033[31mServerul este ocupat. Încearcă mai târziu.\033[0m".encode())
+            client.close()
+            return
+        clients.append(client)
+
+    if len(clients) < 2:
+        client.send("\033[36mAșteptăm conectarea unui alt jucător. \033[0m".encode())
+        return
+
+    player1, player2 = clients
+
+    while True:
+        runda_min = 1
+        runda_max = 4
+
+        for runda in range(runda_min, runda_max):
+            mess = f"\033[36m\n                    Runda {runda} din {runda_max - 1}.\033[0m"
+            try:
+                player1.send(mess.encode())
+                player2.send(mess.encode())
+            except (ConnectionResetError, ConnectionAbortedError):
+                print("Playerii au ieșit din joc.")
+                player1.close()
+                player2.close()
+                return
+
+            while True:
+                player1.send("\033[35m\n                    Alege un număr între 0 și 50 pentru Player 2 să ghicească:\033[0m".encode())
+                player2.send("\033[36m\n                    Așteaptă ca Player1 să aleagă un număr. \033[0m\n".encode())
+                nr2 = player1.recv(1024).decode().strip()
+                if nr2.isdigit() and 0 <= int(nr2) <= 50:
+                    nr2 = int(nr2)
+                    print("Player1 a ales un nr bun")
+                    break
+                else:
+                    player1.send("\033[31mTrebuie să introduci un număr între 0 și 50!\033[0m\n".encode())
+                    print("Player1 a ales un nr care nu e bun")
+
+            #Player2
+            player2.send("\033[36mPlayer 1 a ales un număr. Încearcă să ghicești!\033[0m\n".encode())
+            count = 0
+
+            while True:
+                print("Player2 ghiceste")
+                player2.send("\033[35mIntrodu un număr între 0 și 50:\033[0m\n".encode())
+                guess = player2.recv(1024).decode().strip()
+                if guess.isdigit() and 0 <= int(guess) <= 50:
+                    guess = int(guess)
+                    count += 1
+
+                    if guess == nr2:
+                        player1.send(
+                            "\033[32mNumărul este corect.\n"
+                            f"                    Player2 l-a ghicit din {count} încercări.\033[0m".encode())
+                        player2.send(
+                            "\033[32mNumărul este corect.\n"
+                            f"                    L-ai ghicit din {count} încercări.\033[0m".encode())
+                        break
+                    elif guess < nr2:
+                        player1.send("\033[33mNumărul este mai mare.\033[0m\n".encode())
+                        player2.send("\033[33mNumărul este mai mare.\033[0m\n".encode())
+                    else:
+                        player1.send("\033[33mNumărul este mai mic.\033[0m\n".encode())
+                        player2.send("\033[33mNumărul este mai mic.\033[0m\n".encode())
+
+                else:
+                    player2.send("\033[31mTrebuie să introduci un număr între 0 și 50!\033[0m\n".encode())
+
+            scor2.append(count)
+            scor_max2 = min(scor2) if scor2 else count
+
+            player1.send(f"\033[32mScorul maxim este: {scor_max2}.\033[0m\n".encode())
+            player2.send(f"\033[32mScorul maxim este: {scor_max2}.\033[0m\n".encode())
+
+        player1.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <exit>\033[0m\n".encode())
+        player2.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <exit> \033[0m\n".encode())
+
+        rasp1 = player1.recv(1024).decode().strip().lower()
+        rasp2 = player2.recv(1024).decode().strip().lower()
+
+        if rasp1 == "exit" and rasp2 == "exit":
+            with lock:
+                clients.remove(player1)
+                clients.remove(player2)
+            print("Jocul s-a terminat.")
 
 def server_main():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

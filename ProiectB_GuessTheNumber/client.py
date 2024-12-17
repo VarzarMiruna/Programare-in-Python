@@ -6,8 +6,6 @@ def gest_mesaje(client):
     while True:
         try:
             data = client.recv(1024).decode()
-            #sterge linia acurenta, fara enter
-            #muta cursorul la începutul liniei curente
             sys.stdout.write("\r"
                              + "    " * 20
                              + "\r")
@@ -31,10 +29,8 @@ def main():
     threading.Thread(target=gest_mesaje, args=(client,)).start()
 
     while True:
-            sys.stdout.write("-------------------> ")
-            sys.stdout.flush()
             mesaj = input()
-            if mesaj.lower().strip() == 'exit':
+            if mesaj.lower().strip() == "exit":
                 print("\033[31mAi ieșit din joc.\033[0m")
                 client.send("exit".encode())
                 client.close()

@@ -1,6 +1,7 @@
 import random
 import socket
 import threading
+from threading import Thread
 
 nr = None
 scor = []
@@ -56,7 +57,6 @@ def single(client):
 
     while True:
         client.send("\033[35mJocul a început :)\033[0m".encode())
-
         runda_min = 1
         runda_max = 4
         #scor = []
@@ -96,20 +96,20 @@ def single(client):
                     "\033[35m                    Jocul s-a încheiat!\033[0m \n"
                     "\033[36m                    Joc nou? <<da/exit>>:\033[0m".encode())
 
-        response = client.recv(1024).decode().strip().lower()
+        rasp3 = client.recv(1024).decode().strip().lower()
 
-        if response == "exit":
-            client.close()
+        if rasp3 == "exit":
+            #client.close()
             print("Jucătorul a încheiat jocul Singleplayer.")
             break
-        elif response == "da":
+        elif rasp3 == "da":
             print("Continuam Jocul Singleplayer")
             continue
 
 def multi(client):
     global nr2, scor2, clients
 
-    with lock:  # Accesul la lista clients
+    with lock:  #accesul la lista clients
         if len(clients) >= 2:
             client.send("\033[31mServerul este ocupat. Încearcă mai târziu.\033[0m".encode())
             client.close()
@@ -180,13 +180,13 @@ def multi(client):
                     player2.send("\033[31mTrebuie să introduci un număr între 0 și 50!\033[0m\n".encode())
 
             scor2.append(count)
-            scor_max2 = min(scor2) if scor2 else count
+            scor_max2 = min(scor2)
 
             player1.send(f"\033[32mScorul maxim este: {scor_max2}.\033[0m\n".encode())
             player2.send(f"\033[32mScorul maxim este: {scor_max2}.\033[0m\n".encode())
 
-        player1.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <exit>\033[0m\n".encode())
-        player2.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <exit> \033[0m\n".encode())
+        player1.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <<exit>>\033[0m\n".encode())
+        player2.send(f"\033[35m\n                    Jocul s-a terminat. Apasă <<exit>> \033[0m\n".encode())
 
         rasp1 = player1.recv(1024).decode().strip().lower()
         rasp2 = player2.recv(1024).decode().strip().lower()
